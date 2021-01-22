@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Library Odin</title>
+    <meta charset="UTF-8" />
+  </head>
+
+  <body>
+    <div id="main">
+      <header id="header">
+        <div id="name">
+          <h1>Library Odin!</h1>
+        </div>
+        <div id="addButton">
+          <button type="button" onclick="openForm()">Add Book</button>
+        </div>
+      </header>
+      <div id="dataGrid"></div>
+    </div>
+    <form id="popupForm">
+      <h2 style="padding: 3px; text-align: center">New Book</h2>
+      <h3>Title</h3>
+      <input type="text" class="submitText" id="title" required />
+      <h3>Author</h3>
+      <input type="text" class="submitText" id="author" required />
+      <h3>Pages</h3>
+      <input type="text" class="submitText" id="pages" required />
+      <h3>Read?</h3>
+      <div id="radioDiv">
+        <input
+          class="readRadio"
+          name="readRadio"
+          type="radio"
+          value="yes"
+          checked="true"
+        />yes
+        <input class="readRadio" name="readRadio" type="radio" value="no" />no
+      </div>
+      <button type="button" onclick="addBook()">Add</button>
+      <button type="button" onclick="closeForm()">Cancel</button>
+    </form>
+  </body>
+</html>
+<style>
+  body {
+    width: 80%;
+    margin: 6% auto;
+    background-color: #f7efe3;
+  }
+  #header {
+    height: 70px;
+    margin: 0 auto;
+    background-color: #d9de87;
+  }
+  #header h1 {
+    float: left;
+    padding-top: 15px;
+    margin: 0 auto;
+  }
+  #addButton {
+    float: right;
+    height: 40px;
+    width: 100px;
+    padding-top: 18px;
+    margin: 0 auto;
+  }
+  #addButton button {
+    padding: 5px;
+    margin: 0 auto;
+  }
+  #dataGrid th {
+    width: 1000px;
+    text-align: left;
+    background-color: burlywood;
+  }
+  #dataGrid #deleteTh {
+    width: 300px;
+    text-align: left;
+    background-color: burlywood;
+  }
+  #dataGrid table {
+    border: 1px solid burlywood;
+    border-color: burlywood;
+  }
+  #popupForm {
+    height: 500px;
+    width: 400px;
+    background-color: #de8d87;
+    top: 20%;
+    left: 35%;
+    border-radius: 30px;
+    position: fixed;
+    display: none;
+  }
+  #popupForm h3 {
+    padding: 10px;
+    margin: 3px 10px;
+  }
+  #popupForm input {
+    padding: 10px;
+    margin: 3px 10px;
+    width: 300px;
+    border: none;
+  }
+  #radioDiv {
+    height: 40px;
+    width: 400px;
+  }
+  #radioDiv .readRadio {
+    width: auto;
+    display: inline;
+    margin: 3px 10px;
+  }
+  #popupForm button {
+    padding: 10px;
+    margin: 3px 10px;
+    border: none;
+    border-radius: 10px;
+    width: 120px;
+  }
+</style>
+
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/8.2.3/firebase-app.js"></script>
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script src="https://www.gstatic.com/firebasejs/8.2.3/firebase-database.js"></script>
+
+<script>
+  // Your web app's Firebase configuration
+  var firebaseConfig = {
+    apiKey: "AIzaSyAlU5QgOx3b47rDVF21QOI7ytZGDzJ3QWA",
+    authDomain: "libraryodin.firebaseapp.com",
+    databaseURL:
+      "https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "libraryodin",
+    storageBucket: "libraryodin.appspot.com",
+    messagingSenderId: "496932639167",
+    appId: "1:496932639167:web:afc13a1eb91cc915ed910a",
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+</script>
+
+<script>
+  const database = firebase.database();
+
+  let myLibrary = [{ 1: "a", 2: "b" }];
+
+  const myLibraryGetter = async () => {
+    const _myLibrary = await fetch(
+      "https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app/books.json"
+    );
+    const myLibrary = await _myLibrary.json();
+    // console.log(myLibrary);
+    return myLibrary;
+  };
+
+  //   [
+  //     { title: "a", author: "aa", pages: "aaa", read: "yes" },
+  //     { title: "b", author: "bb", pages: "bbb", read: "no" },
+  //     { title: "c", author: "cc", pages: "ccc", read: "yes" },
+  //   ];
+
+  myLibraryGetter().then((result) => {
+    myLibrary = result;
+    loadTable();
+  });
+
+  function Book(title, author, pages, read) {
+    this.title = title;
+    this.author = author;
+    this.pages = pages;
+    this.read = read;
+  }
+
+  const dataGrid = document.getElementById("dataGrid");
+  //   loadTable();
+  function loadTable() {
+    const bookTable = document.createElement("table");
+    bookTable.setAttribute("id", "bookTable");
+    const thRow = bookTable.insertRow();
+    thRow.innerHTML = `
+            <th>Title</th>
+            <th>Author</th>
+            <th>Pages</th>
+            <th>Read</th>
+            <th id="deleteTh">Delete</th>
+
+        `;
+    for (const i in myLibrary) {
+      const tr = bookTable.insertRow();
+      const tdTitle = tr.insertCell();
+      tdTitle.innerHTML = myLibrary[i].title;
+      const tdAuthor = tr.insertCell();
+      tdAuthor.innerHTML = myLibrary[i].author;
+      const tdPages = tr.insertCell();
+      tdPages.innerHTML = myLibrary[i].pages;
+      const tdRead = tr.insertCell();
+      if (myLibrary[i].read === "yes") {
+        tdRead.innerHTML = `<img src="yes.png" style="width: 9%; padding: 0 30px;" onClick="changeRead('yes', '${i}')">`;
+      } else if (myLibrary[i].read === "no") {
+        tdRead.innerHTML = `<img src="no.png" style="width: 7%; padding: 0 30px;" onClick="changeRead('no', '${i}')">`;
+      }
+      const tdDelete = tr.insertCell();
+      tdDelete.innerHTML = `<img src="delete.png" style="width: 24%; padding: 0 30px;" id="deleteImage${i}" onClick="deleteBook('${i}')">`;
+    }
+    dataGrid.appendChild(bookTable);
+    console.log("after append");
+  }
+
+  function openForm() {
+    // document.getElementById("bookTable").remove();
+    var popupForm = document.getElementById("popupForm");
+    popupForm.style.display = "block";
+    // loadTable();
+  }
+
+  function closeForm() {
+    var popupForm = document.getElementById("popupForm");
+    popupForm.style.display = "none";
+  }
+
+  async function addBook() {
+    let submits = document.querySelectorAll(".submitText");
+    let empty = 0;
+    submits.forEach((submit) => {
+      if (submit.value == "") {
+        empty += 1;
+      }
+    });
+    if (empty > 0) {
+      alert("Please fill all fields");
+    } else {
+      let title = document.getElementById("title").value;
+      let author = document.getElementById("author").value;
+      let pages = document.getElementById("pages").value;
+      let read = document.querySelector("input[name=readRadio]:checked").value;
+      let book = new Book(title, author, pages, read);
+      await fetch(
+        "https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app/books.json",
+        {
+          method: "POST",
+          body: JSON.stringify(book),
+        }
+      ).then(() => {
+        submits = document.querySelectorAll(".submitText");
+        submits.forEach((submit) => {
+          submit.value = "";
+        });
+        document.querySelector("input[value=yes]").checked = true;
+        document.getElementById("bookTable").remove();
+        myLibraryGetter().then((result) => {
+          myLibrary = result;
+          loadTable();
+        });
+        // console.log(myLibrary);
+      });
+    }
+  }
+
+  async function deleteBook(bookIndex) {
+    await fetch(
+      `https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app/books/${bookIndex}.json`,
+      {
+        method: "DELETE",
+      }
+    ).then(() => {
+      document.getElementById("bookTable").remove();
+      myLibraryGetter().then((result) => {
+        myLibrary = result;
+        loadTable();
+      });
+    });
+  }
+
+  async function changeRead(yesno, bookIndex) {
+    if (yesno == "yes") {
+      await fetch(
+        `https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app/books/${bookIndex}.json`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ read: "no" }),
+        }
+      ).then(() => {
+        document.getElementById("bookTable").remove();
+        myLibraryGetter().then((result) => {
+          myLibrary = result;
+          loadTable();
+        });
+      });
+    } else if (yesno == "no") {
+      await fetch(
+        `https://libraryodin-default-rtdb.europe-west1.firebasedatabase.app/books/${bookIndex}.json`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ read: "yes" }),
+        }
+      ).then(() => {
+        document.getElementById("bookTable").remove();
+        myLibraryGetter().then((result) => {
+          myLibrary = result;
+          loadTable();
+        });
+      });
+    }
+  }
+</script>
